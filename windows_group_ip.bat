@@ -1,86 +1,86 @@
-@echo off  
+@echo off
 
 setlocal enabledelayedexpansion
-set ip_range[0]=192.168.33.97
-set ip_range[1]=192.168.34.97
-set ip_range[2]=192.168.35.97
-set ip_range[3]=192.168.36.97
-set ip_range[4]=192.168.37.97
-set ip_range[5]=192.168.38.97
-set ip_range[6]=192.168.39.97
-set ip_range[7]=192.168.40.97
+set ip_range[0]=154.31.216.193
+set ip_range[1]=154.31.217.193
+set ip_range[2]=154.31.218.193
+set ip_range[3]=154.31.219.193
+set ip_range[4]=154.31.220.193
+set ip_range[5]=154.31.221.193
+set ip_range[6]=154.31.222.193
+set ip_range[7]=154.31.223.193
 
 
-set remotedesk_port=14004
-set network_name=Ethernet0
-set gateway=192.168.33.2
-set netmask=255.255.255.224
+set remotedesk_port=20306
+set network_name="Ethernet0"
+set gateway=154.31.216.1
+set netmask=255.255.255.0
 set dns=8.8.8.8
 
-::-------------------------------------------------------------------  
-::設定連續IP
+::-------------------------------------------------------------------
+::setting multiple IP
 set ip_list_A=0
 set ip_list_B=0
-echo 設定為DHCP，清空IP表
-netsh interface ip set address "Ethernet0" dhcp
+echo setting  DHCP clear IP 
+netsh interface ip set address %network_name% dhcp
 timeout /t 2
 setlocal EnableDelayed
-echo 開始新增IP 
+echo add IP
 for /l %%i in (0,1,7) do (
-  :: 陣列分割
+  rem array split
   for /f "tokens=1,2,3,4 delims=." %%a in ("!ip_range[%%i]!") do (
-	::錯誤的話可能是ip_list_A後面有空白
-	set ip_list_A=%%a.%%b.%%c.
-    set ip_list_B=%%d
-    rem echo !ip_list_a!!ip_list_B!
+     rem ip_list_A if last space is error 
+     set ip_list_A=%%a.%%b.%%c.
+     set ip_list_B=%%d
+     rem echo !ip_list_A!!ip_list_B!
   )
   for /l %%j in (1,1,29) do (
-	 set /a ip_list_B+=1
-	 netsh interface ip add address !network_name! !ip_list_A!!ip_list_B! !netmask! !gateway!
-	 echo 新增IP:!ip_list_A!!ip_list_B! !netmask!
-	 rem echo !ip_range[%%i]!
+     set /a ip_list_B+=1
+     netsh interface ip add address !network_name! !ip_list_A!!ip_list_B! !netmask! !gateway!
+     echo add IP: !ip_list_A!!ip_list_B! !netmask!
+     rem echo !ip_range[%%i]!
   )
 )
-echo 新增完成
+echo add IP Finish
 
-::新增DNS
+::add DNS
 timeout /t 1
-echo 新增DNS
+echo add DNS
 netsh interface ip set dnsservers !network_name! static !dns! primary
-echo 新增完成
+echo add DNS Finish
 
-::修改Remote Desk遠程端口(機碼)
+::modify Remote Desk port(regedit)
 timeout /t 1
-echo 修改Remote Desk遠程端口
+echo modify Remote Desk port(regedit)
 set rd_port1="HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp"
 set rd_port2="HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Terminal Server\Wds\rdpwd\Tds\tcp"
 reg add %rd_port1% /v "PortNumber" /t REG_DWORD /d %remotedesk_port% /f
 reg add %rd_port2% /v "PortNumber" /t REG_DWORD /d %remotedesk_port% /f
-echo 修改完成
+echo modify Remote Desk port(regedit) Finish
 
-::啟用遠端桌面，允許連到此電腦(機碼)
+::Enable Remote Desk connect as local PC (regedit)
 timeout /t 1
-echo 啟用遠端桌面，允許連到此電腦
+echo Enable Remote Desk connect as local PC (regedit)
 set rd_start1="HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Terminal Server"
 set rd_start2="HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp"
 reg add %rd_start1% /v "fDenyTSConnections" /t REG_DWORD /d 0 /f
 reg add %rd_start2% /v "UserAuthentication" /t REG_DWORD /d 0 /f
-echo 啟用完成
+echo Enable Remote Desk connect as local PC (regedit) Finish
 
-::新增防火牆端口
+::add Firewall port
 timeout /t 1
-echo 新增防火牆端口
+echo add Firewall port
 netsh firewall delete portopening protocol=TCP port=%remotedesk_port%
 timeout /t 1
 netsh advfirewall firewall add rule name="RemoteDesk%remotedesk_port%" protocol=TCP dir=in localport=%remotedesk_port% action=allow
-echo 新增完成
+echo add Firewall port Finish
 
-::重啟遠端連線
+::Restart Remote Desk
 timeout /t 1
-echo 重啟遠端連線
+echo Restart Remote Desk
 net stop "Remote Desktop Services" /y
 timeout /t 2
 net start "Remote Desktop Services"
-echo 重啟完成
+echo Restart Remote Desk Finish
 
 pause
