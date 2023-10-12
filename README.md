@@ -1,6 +1,5 @@
-# windows_ip_port_setting
-windows server  IP 遠端桌面port 腳本配置
-
+# windows server  IP 遠端桌面port 腳本配置<br>
+<br>
 
 ## windows_group_ip
 1.ip_range填入IP的主機位置，共有8段  (輸入站群IP表)(gateway)<br>
